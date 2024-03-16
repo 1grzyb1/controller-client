@@ -30,4 +30,23 @@ class ExampleControllerTest {
         var response = exampleController.exampleMethod();
         assertThat(response.message()).isEqualTo("Hello world!");
     }
+
+    @Test
+    void postWithBody() {
+        var request = new ExampleRequest("Test message");
+        var response = exampleController.bodyExample(request);
+        assertThat(response.message()).isEqualTo("Received: Test message");
+    }
+
+    @Test
+    void getWithParam() {
+        var response = exampleController.paramExample("param");
+        assertThat(response.message()).isEqualTo("Received: param");
+    }
+
+    @Test
+    void getWithPath() {
+        var response = exampleController.pathExample("Test path");
+        assertThat(response.message()).isEqualTo("Received: Test path");
+    }
 }
