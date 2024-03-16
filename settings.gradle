@@ -1,0 +1,4 @@
+rootProject.name = 'controller-client'
+
+include('library')
+include('example')
