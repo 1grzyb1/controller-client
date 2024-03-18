@@ -117,9 +117,9 @@ public class ControllerClientBuilder<T> {
   }
 
   /**
-   * Convenience method that sets an expected HTTP status code and builds the
-   * {@code ControllerClient} instance. This is equivalent to calling {@link #expectStatus(int)}
-   * followed by {@link #build()}.
+   * Convenience method that sets an expected HTTP status code and builds the {@code
+   * ControllerClient} instance. This is equivalent to calling {@link #expectStatus(int)} followed
+   * by {@link #build()}.
    *
    * @param expectedStatus the expected HTTP status code
    * @return a proxy instance of the specified controller class with the expected status configured

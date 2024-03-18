@@ -1,4 +1,3 @@
 package ovh.snet.grzybek.controller.client.example;
 
-record ExampleRequest(String message) {
-}
+record ExampleRequest(String message) {}

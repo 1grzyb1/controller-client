@@ -28,72 +28,72 @@ import org.springframework.test.web.servlet.ResultActions;
  */
 public class ControllerClientCaller<T> {
 
-    private final ControllerClientBuilder<T> builder;
-    private Function<T, Object> controllerCall;
-    private Consumer<T> controllerConsumer;
+  private final ControllerClientBuilder<T> builder;
+  private Function<T, Object> controllerCall;
+  private Consumer<T> controllerConsumer;
 
-    ControllerClientCaller(ControllerClientBuilder<T> builder) {
-        this.builder = builder;
-    }
+  ControllerClientCaller(ControllerClientBuilder<T> builder) {
+    this.builder = builder;
+  }
 
-    /**
-     * Specifies the controller action to be tested using a {@link Function}. This action
-     * is expected to return a result, which can be further inspected or ignored.
-     *
-     * @param controller a {@link Function} representing the controller action to invoke
-     * @return this {@code ControllerClientCaller} instance for chaining further configurations
-     * @throws IllegalStateException if a controller action has already been defined
-     */
-    public ControllerClientCaller<T> when(Function<T, Object> controller) {
-        this.controllerCall = controller;
-        assertOneConsumer();
-        return this;
-    }
+  /**
+   * Specifies the controller action to be tested using a {@link Function}. This action is expected
+   * to return a result, which can be further inspected or ignored.
+   *
+   * @param controller a {@link Function} representing the controller action to invoke
+   * @return this {@code ControllerClientCaller} instance for chaining further configurations
+   * @throws IllegalStateException if a controller action has already been defined
+   */
+  public ControllerClientCaller<T> when(Function<T, Object> controller) {
+    this.controllerCall = controller;
+    assertOneConsumer();
+    return this;
+  }
 
-    /**
-     * Specifies the controller action to be tested using a {@link Consumer}. This variant
-     * is used for controller actions that return void.
-     *
-     * @param controller a {@link Consumer} representing the controller action to invoke
-     * @return this {@code ControllerClientCaller} instance for chaining further configurations
-     * @throws IllegalStateException if a controller action has already been defined
-     */
-    public ControllerClientCaller<T> when(Consumer<T> controller) {
-        this.controllerConsumer = controller;
-        assertOneConsumer();
-        return this;
-    }
+  /**
+   * Specifies the controller action to be tested using a {@link Consumer}. This variant is used for
+   * controller actions that return void.
+   *
+   * @param controller a {@link Consumer} representing the controller action to invoke
+   * @return this {@code ControllerClientCaller} instance for chaining further configurations
+   * @throws IllegalStateException if a controller action has already been defined
+   */
+  public ControllerClientCaller<T> when(Consumer<T> controller) {
+    this.controllerConsumer = controller;
+    assertOneConsumer();
+    return this;
+  }
 
-    /**
-     * Adds a custom response assertion to be applied after the controller action is invoked.
-     * This allows for detailed inspection of the response, such as checking headers, content,
-     * or status codes.
-     *
-     * @param consumer a {@link Function} that defines the response assertion
-     * @return this {@code ControllerClientCaller} instance for chaining further configurations
-     */
-    public ControllerClientCaller<T> then(Function<ResultActions, ResultActions> consumer) {
-        builder.customizeResponse(consumer);
-        return this;
-    }
+  /**
+   * Adds a custom response assertion to be applied after the controller action is invoked. This
+   * allows for detailed inspection of the response, such as checking headers, content, or status
+   * codes.
+   *
+   * @param consumer a {@link Function} that defines the response assertion
+   * @return this {@code ControllerClientCaller} instance for chaining further configurations
+   */
+  public ControllerClientCaller<T> then(Function<ResultActions, ResultActions> consumer) {
+    builder.customizeResponse(consumer);
+    return this;
+  }
 
-    /**
-     * A convenience method for adding an assertion on the HTTP status code of the response.
-     *
-     * @param statusCode the expected HTTP status code
-     * @return this {@code ControllerClientCaller} instance for chaining further configurations
-     */
-    public ControllerClientCaller<T> thenStatus(int statusCode) {
-        then(
-                result -> {
-                    try {
-                        return result.andExpect(status().is(statusCode));
-                    } catch (Exception e) {
-                        throw new RuntimeException(e);
-                    }
-                });
-        return this;
-    }
+  /**
+   * A convenience method for adding an assertion on the HTTP status code of the response.
+   *
+   * @param statusCode the expected HTTP status code
+   * @return this {@code ControllerClientCaller} instance for chaining further configurations
+   */
+  public ControllerClientCaller<T> thenStatus(int statusCode) {
+    then(
+        result -> {
+          try {
+            return result.andExpect(status().is(statusCode));
+          } catch (Exception e) {
+            throw new RuntimeException(e);
+          }
+        });
+    return this;
+  }
 
   /**
    * Executes the configured controller action and returns the result. This method builds the
@@ -107,18 +107,17 @@ public class ControllerClientCaller<T> {
    *     defined
    */
   public <R> R execute(Class<R> responseClazz) {
-        assertOneConsumer();
-        if (controllerConsumer != null) {
-            controllerConsumer.accept(builder.build());
-            return null;
-        }
-        return (R) controllerCall.apply(builder.build());
+    assertOneConsumer();
+    if (controllerConsumer != null) {
+      controllerConsumer.accept(builder.build());
+      return null;
     }
+    return (R) controllerCall.apply(builder.build());
+  }
 
-    private void assertOneConsumer() {
-        if (controllerCall != null && controllerConsumer != null) {
-            throw new IllegalStateException("Only one controller call can be defined");
-        }
+  private void assertOneConsumer() {
+    if (controllerCall != null && controllerConsumer != null) {
+      throw new IllegalStateException("Only one controller call can be defined");
     }
+  }
 }
-
