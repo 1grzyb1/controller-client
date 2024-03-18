@@ -1,16 +1,14 @@
 package ovh.snet.grzybek.controller.client.example;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.http.HttpStatus;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import ovh.snet.grzybek.controller.client.core.ControllerClientBuilderFactory;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Import(ControllerClientBuilderFactory.class)
@@ -49,41 +47,5 @@ class BasicUsageExamples {
   void getWithPath() {
     var response = exampleController.pathExample("Test path");
     assertThat(response.message()).isEqualTo("Received: Test path");
-  }
-
-  @Test
-  void customizeRequest() {
-    var client =
-        controllerClientBuilderFactory
-            .builder(ExampleController.class)
-            .customizeRequest(
-                request ->
-                    ((MockHttpServletRequestBuilder) request).header("Authorization", "token"))
-            .build();
-    var response = client.exampleMethod();
-    assertThat(response.message()).isEqualTo("Hello world!");
-  }
-
-  @Test
-  void checkExpectedStatusUsingBuilder() {
-    var client =
-        controllerClientBuilderFactory
-            .builder(ExampleController.class)
-            .expectStatus(HttpStatus.OK.value())
-            .build();
-    var response = client.exampleMethod();
-    assertThat(response.message()).isEqualTo("Hello world!");
-  }
-
-  @Test
-  void checkExpectedStatusUsingCaller() {
-    var clientCaller = controllerClientBuilderFactory.caller(ExampleController.class);
-    var result =
-        clientCaller
-            .when(ExampleController::exampleMethod)
-            .thenStatus(HttpStatus.OK.value())
-            .execute(ExampleResponse.class);
-
-    assertThat(result.message()).isEqualTo("Hello world!");
   }
 }

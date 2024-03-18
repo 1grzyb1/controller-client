@@ -21,10 +21,11 @@ class CallerConfigurationExamples {
   void checkExpectedStatusUsingCaller() {
     var clientCaller = controllerClientBuilderFactory.caller(ExampleController.class);
     var result =
-        clientCaller
-            .when(ExampleController::exampleMethod)
-            .thenStatus(HttpStatus.OK.value())
-            .execute(ExampleResponse.class);
+        (ExampleResponse)
+            clientCaller
+                .when(ExampleController::exampleMethod)
+                .thenStatus(HttpStatus.OK.value())
+                .execute();
 
     assertThat(result.message()).isEqualTo("Hello world!");
   }

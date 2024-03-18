@@ -100,13 +100,12 @@ public class ControllerClientCaller<T> {
    * controller client, invokes the specified action, applies any response assertions, and returns
    * the action's result if applicable.
    *
-   * @param responseClazz the class of the response expected from the controller action
    * @param <R> the type of the response
    * @return the result of the controller action, or {@code null} if the action returns void
    * @throws IllegalStateException if both a {@link Function} and a {@link Consumer} have been
    *     defined
    */
-  public <R> R execute(Class<R> responseClazz) {
+  public <R> R execute() {
     assertOneConsumer();
     if (controllerConsumer != null) {
       controllerConsumer.accept(builder.build());
