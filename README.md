@@ -50,7 +50,9 @@ Currently supported annotations are:
 
 ### Basic Usage
 
-Create a proxy instance of your controller and invoke methods directly:
+Create a proxy instance of your controller and invoke methods directly
+
+Underneath it uses `MockMvc` to perform the request and map the response to the return type of the method.
 
 ``` java
     @Autowired
