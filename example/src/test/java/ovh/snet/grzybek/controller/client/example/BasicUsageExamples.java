@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest
 @Import(ControllerClientBuilderFactory.class)
 @AutoConfigureMockMvc
-class ExampleControllerTest {
+class BasicUsageExamples {
 
   @Autowired private ControllerClientBuilderFactory controllerClientBuilderFactory;
 
@@ -52,13 +52,23 @@ class ExampleControllerTest {
   }
 
   @Test
-  void cusotmize() {
+  void customizeRequest() {
     var client =
         controllerClientBuilderFactory
             .builder(ExampleController.class)
             .customizeRequest(
                 request ->
                     ((MockHttpServletRequestBuilder) request).header("Authorization", "token"))
+            .build();
+    var response = client.exampleMethod();
+    assertThat(response.message()).isEqualTo("Hello world!");
+  }
+
+  @Test
+  void checkExpectedStatusUsingBuilder() {
+    var client =
+        controllerClientBuilderFactory
+            .builder(ExampleController.class)
             .expectStatus(HttpStatus.OK.value())
             .build();
     var response = client.exampleMethod();
@@ -66,9 +76,10 @@ class ExampleControllerTest {
   }
 
   @Test
-  void caller() {
+  void checkExpectedStatusUsingCaller() {
     var clientCaller = controllerClientBuilderFactory.caller(ExampleController.class);
-    var result = clientCaller
+    var result =
+        clientCaller
             .when(ExampleController::exampleMethod)
             .thenStatus(HttpStatus.OK.value())
             .execute(ExampleResponse.class);

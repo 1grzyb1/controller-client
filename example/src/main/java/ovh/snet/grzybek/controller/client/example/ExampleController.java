@@ -1,6 +1,7 @@
 package ovh.snet.grzybek.controller.client.example;
 
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.web.bind.annotation.*;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -27,5 +28,12 @@ class ExampleController {
     @GetMapping("/path/{message}")
     public ExampleResponse pathExample(@PathVariable("message") String message) {
         return new ExampleResponse("Received: " + message);
+    }
+
+    @GetMapping("/header")
+    ExampleResponse headerExample(HttpServletRequest request) {
+        var exampleHeader = request.getHeader("X-Example-Header");
+        var message = "Header value: " + (exampleHeader != null ? exampleHeader : "Not Provided");
+        return new ExampleResponse(message);
     }
 }
