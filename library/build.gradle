@@ -1,19 +1,19 @@
 plugins {
-    id 'java'
+    id 'java-library'
+    id "com.vanniktech.maven.publish" version "0.28.0"
 }
 
-group = 'ovh.snet.grzybek'
-version = '1.0-SNAPSHOT'
+group = 'io.github.1grzyb1'
+version = '1.0.0'
 
 repositories {
     mavenCentral()
 }
 
 dependencies {
-    implementation("org.springframework.boot:spring-boot-starter-web:3.2.3")
-    implementation("io.rest-assured:spring-mock-mvc:5.4.0")
+    implementation "org.springframework.boot:spring-boot-starter-web:3.2.3"
+    implementation "io.rest-assured:spring-mock-mvc:5.4.0"
     implementation 'javax.servlet:javax.servlet-api:4.0.1'
-
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
@@ -21,3 +21,38 @@ dependencies {
 test {
     useJUnitPlatform()
 }
+
+import com.vanniktech.maven.publish.SonatypeHost
+
+mavenPublishing {
+    publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+
+    signAllPublications()
+    pom {
+        name = 'Controller Client'
+        description = 'Spring library to create controller proxy in tests'
+        url = 'https://github.com/1grzyb1/controller-client'
+
+        licenses {
+            license {
+                name = 'MIT License'
+                url = 'https://opensource.org/licenses/MIT'
+            }
+        }
+
+        developers {
+            developer {
+                id = 'wkeska'
+                name = 'Wiktor Keska'
+                email = 'wikt.keska@gmail.com'
+            }
+        }
+
+        scm {
+            connection = 'scm:git:git://github.com/1grzyb1/controller-client.git'
+            developerConnection = 'scm:git:ssh://github.com:1grzyb1/controller-client.git'
+            url = 'https://github.com/1grzyb1/controller-client'
+        }
+    }
+}
+
