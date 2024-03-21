@@ -48,4 +48,12 @@ class BasicUsageExamples {
     var response = exampleController.pathExample("Test path");
     assertThat(response.message()).isEqualTo("Received: Test path");
   }
+
+  @Test
+  void getList() {
+    var response = exampleController.listExample();
+    assertThat(response).hasSize(2);
+    assertThat(response.get(0).message()).isEqualTo("a");
+    assertThat(response.get(1).message()).isEqualTo("b");
+  }
 }
