@@ -50,6 +50,7 @@ Currently supported annotations are:
 
 ### Basic Usage
 
+#### Simple GET request
 Create a proxy instance of your controller and invoke methods directly
 
 Underneath it uses `MockMvc` to perform the request and map the response to the return type of the method.
@@ -65,5 +66,73 @@ Underneath it uses `MockMvc` to perform the request and map the response to the 
         assertThat(response.message()).isEqualTo("Hello world!");
     }
 ```
+
+Without controller client it would look like this
+
+``` java
+      @Autowired private MockMvc mockMvc;
+      @Autowired private ObjectMapper objectMapper;
+
+      @Test
+      void basicGetMockMvc() throws Exception {
+        String responseContent = mockMvc.perform(get("/example"))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+    
+        ExampleResponse response = objectMapper.readValue(responseContent, ExampleResponse.class);
+    
+        assertThat(response.message()).isEqualTo("Hello world!");
+      }
+```
+
+#### POST request with request body
+
+For following POST request
+
+``` java
+    @PostMapping("/example/body")
+    public ExampleResponse examplePostMethod(@RequestBody ExampleRequest request) {
+        return new ExampleResponse(request.getMessage());
+    }
+```
+
+Controller client usage would look like this
+
+``` java
+     @Test
+     void postWithBody() {
+        ExampleController exampleController = controllerClientBuilderFactory.builder(ExampleController.class).build();
+        var request = new ExampleRequest("Test message");
+        var response = exampleController.bodyExample(request);
+        assertThat(response.message()).isEqualTo("Received: Test message");
+     }
+```
+
+Without controller client it would look like this
+
+```java
+    @Test
+    void testBodyExample() throws Exception {
+        var exampleRequest = new ExampleRequest("Test message");
+        var requestJson = objectMapper.writeValueAsString(exampleRequest);
+
+        var requestBuilder =
+                MockMvcRequestBuilders.request(HttpMethod.POST, "/example/body")
+                        .content(requestJson)
+                        .contentType(MediaType.APPLICATION_JSON);
+        var responseContent = mockMvc.perform(requestBuilder)
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
+
+        var response = objectMapper.readValue(responseContent, ExampleResponse.class);
+        assertThat(response.message()).isEqualTo("Received: Test message");
+    }
+
+```
+
 
 You can check more examples in the [example package](example/src/test/java/ovh/snet/grzybek/controller/client/example).
