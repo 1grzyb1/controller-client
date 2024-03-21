@@ -41,4 +41,9 @@ class ExampleController {
   List<ExampleResponse> listExample() {
     return List.of(new ExampleResponse("a"), new ExampleResponse("b"));
   }
+
+  @GetMapping("/twoType")
+  TwoParameterType<String, Integer> twoType() {
+    return new TwoParameterType<>("a", 1);
+  }
 }
