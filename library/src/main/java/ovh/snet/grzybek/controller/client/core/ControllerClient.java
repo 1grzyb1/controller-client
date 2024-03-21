@@ -74,7 +74,7 @@ class ControllerClient<T> {
     }
 
     if (returnType instanceof ParameterizedType) {
-      return mapList((ParameterizedType) returnType, response);
+      return mapParameterizedType((ParameterizedType) returnType, response);
     } else if (returnType instanceof Class) {
       return objectMapper.readValue(response.getContentAsString(), (Class<?>) returnType);
     }
@@ -82,21 +82,24 @@ class ControllerClient<T> {
     throw new UnsupportedOperationException("Unsupported return type: " + returnType);
   }
 
-  private List<Object> mapList(ParameterizedType returnType, MockHttpServletResponse response)
+  private Object mapParameterizedType(
+      ParameterizedType returnType, MockHttpServletResponse response)
       throws JsonProcessingException, UnsupportedEncodingException {
-    var rawType = returnType.getRawType();
-    if (!rawType.equals(List.class)) {
-      throw new UnsupportedOperationException("Unsupported return type: " + rawType);
-    }
+    var rawType = (Class<?>) returnType.getRawType();
     var actualTypeArguments = returnType.getActualTypeArguments();
     if (actualTypeArguments.length != 1) {
       throw new UnsupportedOperationException(
-          "Illegal length on arguments: " + rawType + " requires 1 argument");
+          "Unsupported number of arguments: "
+              + rawType.getSimpleName()
+              + " requires 1 argument, found "
+              + actualTypeArguments.length);
     }
+
     var javaType =
         objectMapper
             .getTypeFactory()
-            .constructCollectionType(List.class, (Class<?>) actualTypeArguments[0]);
+            .constructParametricType(rawType, (Class<?>) actualTypeArguments[0]);
+
     return objectMapper.readValue(response.getContentAsString(), javaType);
   }
 
