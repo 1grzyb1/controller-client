@@ -7,6 +7,7 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Parameter;
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -86,21 +87,25 @@ class ControllerClient<T> {
       ParameterizedType returnType, MockHttpServletResponse response)
       throws JsonProcessingException, UnsupportedEncodingException {
     var rawType = (Class<?>) returnType.getRawType();
+
     var actualTypeArguments = returnType.getActualTypeArguments();
-    if (actualTypeArguments.length != 1) {
-      throw new UnsupportedOperationException(
-          "Unsupported number of arguments: "
-              + rawType.getSimpleName()
-              + " requires 1 argument, found "
-              + actualTypeArguments.length);
-    }
+
+    var typeArgumentsClasses =
+        Arrays.stream(actualTypeArguments)
+            .map(ControllerClient::getaClass)
+            .toArray(Class<?>[]::new);
 
     var javaType =
-        objectMapper
-            .getTypeFactory()
-            .constructParametricType(rawType, (Class<?>) actualTypeArguments[0]);
+        objectMapper.getTypeFactory().constructParametricType(rawType, typeArgumentsClasses);
 
     return objectMapper.readValue(response.getContentAsString(), javaType);
+  }
+
+  private static Class<?> getaClass(Type type) {
+    if (type instanceof Class) {
+      return (Class<?>) type;
+    }
+    throw new UnsupportedOperationException("Unsupported type argument: " + type.getTypeName());
   }
 
   private MockHttpServletRequestBuilder prepareRequest(Method method, Object[] args) {

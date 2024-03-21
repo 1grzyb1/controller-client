@@ -56,4 +56,11 @@ class BasicUsageExamples {
     assertThat(response.get(0).message()).isEqualTo("a");
     assertThat(response.get(1).message()).isEqualTo("b");
   }
+
+  @Test
+  void getParametrizedType() {
+    var response = exampleController.twoType();
+    assertThat(response.getFirst()).isEqualTo("a");
+    assertThat(response.getSecond()).isEqualTo(1);
+  }
 }
