@@ -1,7 +1,5 @@
 package ovh.snet.grzybek.controller.client.example;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -9,6 +7,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpStatus;
 import ovh.snet.grzybek.controller.client.core.ControllerClientBuilderFactory;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @Import(ControllerClientBuilderFactory.class)
@@ -28,5 +28,16 @@ class CallerConfigurationExamples {
                 .execute();
 
     assertThat(result.message()).isEqualTo("Hello world!");
+  }
+
+  @Test
+  void checkInvalidStatusWhenEnumInResponse() {
+    var clientCaller = controllerClientBuilderFactory.caller(ExampleController.class);
+    var result =
+            (ExampleResponse)
+                    clientCaller
+                            .when(ExampleController::enumExample)
+                            .thenStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                            .execute();
   }
 }
