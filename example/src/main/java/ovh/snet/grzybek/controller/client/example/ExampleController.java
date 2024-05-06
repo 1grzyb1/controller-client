@@ -3,6 +3,7 @@ package ovh.snet.grzybek.controller.client.example;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -52,5 +53,12 @@ class ExampleController {
     @GetMapping("/enum")
     ResponseEntity<ResponseWithEnum> enumExample() {
         return ResponseEntity.internalServerError().build();
+    }
+
+    @PostMapping("/upload")
+    public ExampleResponse uploadFile(@RequestParam("file") MultipartFile file) {
+        var fileName = file.getOriginalFilename();
+        var contentType = file.getContentType();
+        return new ExampleResponse("Uploaded File: " + fileName + " (" + contentType + ")");
     }
 }
