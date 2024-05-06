@@ -6,7 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import ovh.snet.grzybek.controller.client.core.ControllerClientBuilderFactory;
+import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -15,13 +15,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 class BasicUsageExamples {
 
-  @Autowired private ControllerClientBuilderFactory controllerClientBuilderFactory;
+  @Autowired private ControllerClientFactory controllerClientFactory;
 
   private ExampleController exampleController;
 
   @BeforeEach
   void setUp() {
-    exampleController = controllerClientBuilderFactory.builder(ExampleController.class).build();
+    exampleController = controllerClientFactory.create(ExampleController.class);
   }
 
   @Test

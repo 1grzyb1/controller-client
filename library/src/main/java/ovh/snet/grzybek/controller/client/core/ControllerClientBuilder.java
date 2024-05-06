@@ -1,15 +1,16 @@
 package ovh.snet.grzybek.controller.client.core;
 
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.RequestBuilder;
+import org.springframework.test.web.servlet.ResultActions;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
-import org.springframework.test.web.servlet.ResultActions;
+
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
  * Builder class for creating a rest client for spring RestControllers.
@@ -27,8 +28,8 @@ import org.springframework.test.web.servlet.ResultActions;
  * </ul>
  *
  * <p>You can create a {@code ControllerClient} instance by injecting {@link
- * ControllerClientBuilderFactory(Class)} bean and calling {@link
- * ControllerClientBuilderFactory#builder(Class)}.
+ * ControllerClientFactory (Class)} bean and calling {@link
+ * ControllerClientFactory#builder(Class)}.
  *
  * <p>Usage example:
  *

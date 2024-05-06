@@ -6,7 +6,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import ovh.snet.grzybek.controller.client.core.ControllerClientBuilderFactory;
+import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,12 +14,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 class BuilderConfigurationExamples {
 
-  @Autowired private ControllerClientBuilderFactory controllerClientBuilderFactory;
+  @Autowired private ControllerClientFactory controllerClientFactory;
 
   @Test
   void customizeRequest() {
     var client =
-        controllerClientBuilderFactory
+        controllerClientFactory
             .builder(ExampleController.class)
             .customizeRequest(
                 request ->
@@ -32,7 +32,7 @@ class BuilderConfigurationExamples {
   @Test
   void checkExpectedStatusUsingBuilder() {
     var client =
-        controllerClientBuilderFactory
+        controllerClientFactory
             .builder(ExampleController.class)
             .expectStatus(HttpStatus.OK.value())
             .build();
