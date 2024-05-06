@@ -57,11 +57,11 @@ Underneath it uses `MockMvc` to perform the request and map the response to the 
 
 ``` java
     @Autowired
-    private ControllerClientBuilderFactory controllerClientBuilderFactory;
+    private ControllerClientFactory controllerClientFactory;
     
     @Test
     void basicGet() {
-        ExampleController exampleController = controllerClientBuilderFactory.builder(ExampleController.class).build();
+        ExampleController exampleController = controllerClientFactory.create(ExampleController.class);
         var response = exampleController.exampleMethod();
         assertThat(response.message()).isEqualTo("Hello world!");
     }
@@ -91,7 +91,7 @@ Without controller client it would look like this
 
 For following POST request
 
-``` java
+```java
     @PostMapping("/example/body")
     public ExampleResponse examplePostMethod(@RequestBody ExampleRequest request) {
         return new ExampleResponse(request.getMessage());
@@ -100,10 +100,10 @@ For following POST request
 
 Controller client usage would look like this
 
-``` java
+```java
      @Test
      void postWithBody() {
-        ExampleController exampleController = controllerClientBuilderFactory.builder(ExampleController.class).build();
+        ExampleController exampleController = controllerClientFactory.create(ExampleController.class);
         var request = new ExampleRequest("Test message");
         var response = exampleController.bodyExample(request);
         assertThat(response.message()).isEqualTo("Received: Test message");
