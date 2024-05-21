@@ -11,7 +11,6 @@ import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
-//@Import(ControllerClientBuilderFactory.class)
 @AutoConfigureMockMvc
 class BasicUsageExamples {
 

@@ -127,11 +127,15 @@ class ControllerClient<T> {
 
     private static MockHttpServletRequestBuilder getRequestBuilder(Method method, RequestMapping requestMapping, String endpoint) {
         if (isMultipart(method)) {
-            return MockMvcRequestBuilders.multipart(endpoint);
+            MockHttpServletRequestBuilder multipartBuilder = MockMvcRequestBuilders.multipart(endpoint);
+            multipartBuilder.with(request -> {
+                request.setMethod(requestMapping.method()[0].name());
+                return request;
+            });
+            return multipartBuilder;
         }
         return MockMvcRequestBuilders.request(requestMapping.method()[0].asHttpMethod(), endpoint);
     }
-
 
     private static boolean isMultipart(Method method) {
         return Arrays.stream(method.getParameterTypes())

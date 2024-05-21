@@ -61,4 +61,11 @@ class ExampleController {
         var contentType = file.getContentType();
         return new ExampleResponse("Uploaded File: " + fileName + " (" + contentType + ")");
     }
+
+    @PutMapping("/upload")
+    public ExampleResponse uploadFilePut(@RequestParam("file") MultipartFile file) {
+        var fileName = file.getOriginalFilename();
+        var contentType = file.getContentType();
+        return new ExampleResponse("Uploaded File using put: " + fileName + " (" + contentType + ")");
+    }
 }
