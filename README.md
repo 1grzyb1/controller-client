@@ -31,6 +31,7 @@ Currently supported annotations are:
 - `RequestBody`
 - `RequestMapping` including annotations inheriting it
 - `RequestParam`
+- `MultipartFile`
 
 ## Installation
 
