@@ -38,4 +38,21 @@ class CallerConfigurationExamples {
                             .thenStatus(HttpStatus.INTERNAL_SERVER_ERROR.value())
                             .execute();
   }
+
+  @Test
+  void addCsrfToken() {
+    var builder =
+            controllerClientFactory
+                    .builder(ExampleController.class)
+                    .expectStatus(HttpStatus.OK.value());
+    var clientCaller = controllerClientFactory.caller(builder);
+    var result =
+            (ExampleResponse)
+                    clientCaller
+                            .when(ExampleController::exampleMethod)
+                            .thenStatus(HttpStatus.OK.value())
+                            .execute();
+
+    assertThat(result.message()).isEqualTo("Hello world!");
+  }
 }

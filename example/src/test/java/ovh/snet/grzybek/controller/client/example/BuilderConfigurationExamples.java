@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -22,8 +21,7 @@ class BuilderConfigurationExamples {
         controllerClientFactory
             .builder(ExampleController.class)
             .customizeRequest(
-                request ->
-                    ((MockHttpServletRequestBuilder) request).header("X-Example-Header", "token"))
+                request -> request.header("X-Example-Header", "token"))
             .build();
     var response = client.headerExample(null);
     assertThat(response.message()).isEqualTo("Header value: token");

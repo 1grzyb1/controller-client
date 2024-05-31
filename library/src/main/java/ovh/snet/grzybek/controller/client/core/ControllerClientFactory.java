@@ -54,4 +54,11 @@ public class ControllerClientFactory {
     public <T> ControllerClientCaller<T> caller(Class<T> clazz) {
         return new ControllerClientCaller<>(builder(clazz));
     }
+
+    /**
+     * Creates a new instance of {@link ControllerClientCaller} for the given builder.
+     */
+    public <T> ControllerClientCaller<T> caller(ControllerClientBuilder<T> builder) {
+        return new ControllerClientCaller<>(builder);
+    }
 }

@@ -10,7 +10,6 @@ import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.RequestBuilder;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
@@ -37,14 +36,14 @@ class ControllerClient<T> {
     private final Class<?> clazz;
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
-    private final List<Consumer<RequestBuilder>> requestCustomizers;
+    private final List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers;
     private final List<Function<ResultActions, ResultActions>> resultCustomizers;
 
     public ControllerClient(
             Class<?> clazz,
             MockMvc mockMvc,
             ObjectMapper objectMapper,
-            List<Consumer<RequestBuilder>> requestCustomizers,
+            List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers,
             List<Function<ResultActions, ResultActions>> resultCustomizers) {
         this.clazz = clazz;
         this.mockMvc = mockMvc;
