@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
@@ -79,6 +81,8 @@ class ControllerClient<T> {
 
         if (returnType instanceof ParameterizedType) {
             return mapParameterizedType((ParameterizedType) returnType, response);
+        } else if (returnType == String.class) {
+            return response.getContentAsString();
         } else if (returnType instanceof Class) {
             return objectMapper.readValue(response.getContentAsString(), (Class<?>) returnType);
         }
@@ -111,7 +115,7 @@ class ControllerClient<T> {
         throw new UnsupportedOperationException("Unsupported type argument: " + type.getTypeName());
     }
 
-    private MockHttpServletRequestBuilder prepareRequest(Method method, Object[] args) {
+    private MockHttpServletRequestBuilder prepareRequest(Method method, Object[] args) throws IOException {
         var classAnnotations = clazz.getAnnotations();
         var requestMapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
         var requestPath = requestMapping.path();
@@ -121,7 +125,17 @@ class ControllerClient<T> {
         var requestBuilder = getRequestBuilder(method, requestMapping, endpoint);
         setRequestParams(method, args, requestBuilder);
         setRequestBody(method, args, requestBuilder);
+        setInputStream(requestBuilder, args);
         return requestBuilder;
+    }
+
+    private void setInputStream(MockHttpServletRequestBuilder requestBuilder, Object[] args) throws IOException {
+        for (var arg : args) {
+            if (arg instanceof InputStream) {
+                requestBuilder.content(((InputStream) arg).readAllBytes())
+                        .contentType(MediaType.TEXT_PLAIN);
+            }
+        }
     }
 
     private static MockHttpServletRequestBuilder getRequestBuilder(Method method, RequestMapping requestMapping, String endpoint) {
@@ -150,7 +164,8 @@ class ControllerClient<T> {
                         requestBuilder
                                 .content(objectMapper.writeValueAsString(body))
                                 .contentType(MediaType.APPLICATION_JSON);
-                    } catch (JsonProcessingException e) {
+
+                    } catch (IOException e) {
                         throw new RuntimeException(e);
                     }
                 });

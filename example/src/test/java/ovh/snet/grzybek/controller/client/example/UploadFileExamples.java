@@ -8,6 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 
+import java.io.ByteArrayInputStream;
+import java.io.InputStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
@@ -35,5 +38,13 @@ class UploadFileExamples {
     var file = new MockMultipartFile("file", "test.txt", "text/plain", "Hello, World!".getBytes());
     var response = exampleController.uploadFilePut(file);
     assertThat(response.message()).isEqualTo("Uploaded File using put: test.txt (text/plain)");
+  }
+
+  @Test
+  void sendStreamRequest() {
+    String content = "test";
+    InputStream inputStream = new ByteArrayInputStream(content.getBytes());
+    String response = exampleController.streamFile(inputStream);
+    assertThat(response).isEqualTo("Received stream");
   }
 }

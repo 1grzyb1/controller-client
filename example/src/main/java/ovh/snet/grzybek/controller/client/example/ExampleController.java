@@ -5,6 +5,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.InputStream;
 import java.util.List;
 
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
@@ -67,5 +68,10 @@ class ExampleController {
         var fileName = file.getOriginalFilename();
         var contentType = file.getContentType();
         return new ExampleResponse("Uploaded File using put: " + fileName + " (" + contentType + ")");
+    }
+
+    @PostMapping("/stream")
+    public String streamFile(InputStream inputStream) {
+        return "Received stream";
     }
 }
