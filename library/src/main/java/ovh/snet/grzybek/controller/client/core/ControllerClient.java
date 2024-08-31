@@ -40,18 +40,21 @@ class ControllerClient<T> {
     private final ObjectMapper objectMapper;
     private final List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers;
     private final List<Function<ResultActions, ResultActions>> resultCustomizers;
+    private final List<Consumer<MockHttpServletResponse>> responseHandlers;
 
     public ControllerClient(
             Class<?> clazz,
             MockMvc mockMvc,
             ObjectMapper objectMapper,
             List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers,
-            List<Function<ResultActions, ResultActions>> resultCustomizers) {
+            List<Function<ResultActions, ResultActions>> resultCustomizers,
+            List<Consumer<MockHttpServletResponse>> responseHandlers) {
         this.clazz = clazz;
         this.mockMvc = mockMvc;
         this.objectMapper = objectMapper;
         this.requestCustomizers = requestCustomizers;
         this.resultCustomizers = resultCustomizers;
+        this.responseHandlers = responseHandlers;
     }
 
     T getClient() {
@@ -69,6 +72,8 @@ class ControllerClient<T> {
         resultCustomizers.forEach(customizer -> customizer.apply(perform));
 
         var response = perform.andReturn().getResponse();
+
+        responseHandlers.forEach(handler -> handler.accept(response));
 
         var returnType = method.getGenericReturnType();
         if (returnType.equals(Void.TYPE)) {

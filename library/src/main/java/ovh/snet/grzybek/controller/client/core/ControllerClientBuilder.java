@@ -1,6 +1,7 @@
 package ovh.snet.grzybek.controller.client.core;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -50,6 +51,7 @@ public class ControllerClientBuilder<T> {
   private final List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers = new ArrayList<>();
   private final List<Function<ResultActions, ResultActions>> responseCustomizers =
       new ArrayList<>();
+  private final List<Consumer<MockHttpServletResponse>> responseHandlers = new ArrayList<>();
 
   ControllerClientBuilder(Class<T> clazz, ObjectMapper objectMapper, MockMvc mockMvc) {
     this.clazz = clazz;
@@ -79,6 +81,11 @@ public class ControllerClientBuilder<T> {
   public ControllerClientBuilder<T> customizeResponse(
       Function<ResultActions, ResultActions> consumer) {
     responseCustomizers.add(consumer);
+    return this;
+  }
+
+  public ControllerClientBuilder<T> handleResponse(Consumer<MockHttpServletResponse> consumer) {
+    responseHandlers.add(consumer);
     return this;
   }
 
@@ -113,7 +120,8 @@ public class ControllerClientBuilder<T> {
             mockMvc,
             objectMapper,
             new ArrayList<>(requestCustomizers),
-            new ArrayList<>(responseCustomizers))
+            new ArrayList<>(responseCustomizers),
+            new ArrayList<>(responseHandlers))
         .getClient();
   }
 

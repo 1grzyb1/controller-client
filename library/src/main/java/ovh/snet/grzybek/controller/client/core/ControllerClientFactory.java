@@ -61,4 +61,18 @@ public class ControllerClientFactory {
     public <T> ControllerClientCaller<T> caller(ControllerClientBuilder<T> builder) {
         return new ControllerClientCaller<>(builder);
     }
+
+    /**
+     * Creates a new instance of {@link RespondingControllerClient} for the given clazz.
+     */
+    public <T> RespondingControllerClient<T> respondingClient(Class<T> clazz) {
+        return new RespondingControllerClient<>(builder(clazz));
+    }
+
+    /**
+     * Creates a new instance of {@link RespondingControllerClient} for the given builder.
+     */
+    public <T> RespondingControllerClient<T> respondingClient(ControllerClientBuilder<T> builder) {
+        return new RespondingControllerClient<>(builder);
+    }
 }
