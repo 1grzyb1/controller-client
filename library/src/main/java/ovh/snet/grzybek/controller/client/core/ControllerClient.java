@@ -183,7 +183,12 @@ class ControllerClient<T> {
             if (value instanceof MockMultipartFile) {
                 ((MockMultipartHttpServletRequestBuilder) requestBuilder).file((MockMultipartFile) value);
             } else {
-                requestBuilder.param(key, value.toString());
+                if (value instanceof Collection<?> collection) {
+                    var values = collection.stream().map(Object::toString).toArray(String[]::new);
+                    requestBuilder.param(key, values);
+                } else {
+                    requestBuilder.param(key, value.toString());
+                }
             }
         });
     }
