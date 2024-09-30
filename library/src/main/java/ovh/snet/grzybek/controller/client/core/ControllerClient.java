@@ -182,6 +182,9 @@ class ControllerClient<T> {
         queryParams.forEach((key, value) -> {
             if (value instanceof MockMultipartFile) {
                 ((MockMultipartHttpServletRequestBuilder) requestBuilder).file((MockMultipartFile) value);
+            } else if (value instanceof Collection<?> collection) {
+                var values = collection.stream().map(Object::toString).toArray(String[]::new);
+                requestBuilder.param(key, values);
             } else {
                 requestBuilder.param(key, value.toString());
             }
