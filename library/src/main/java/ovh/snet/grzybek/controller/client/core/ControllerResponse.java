@@ -8,6 +8,7 @@ import java.util.Map;
 
 public record ControllerResponse<T>(long contentLength, String contentType,
                                     Map<String, List<String>> headers, String errorMessage, int statusCode,
+                                    MockHttpServletResponse mockHttpServletResponse,
                                     T response) {
 
     ControllerResponse(MockHttpServletResponse response) {
@@ -20,6 +21,7 @@ public record ControllerResponse<T>(long contentLength, String contentType,
                 getHeaders(response),
                 response.getErrorMessage(),
                 response.getStatus(),
+                response,
                 responseBody);
     }
 
