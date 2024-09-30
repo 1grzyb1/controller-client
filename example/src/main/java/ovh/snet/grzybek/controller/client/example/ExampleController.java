@@ -74,4 +74,9 @@ class ExampleController {
     public String streamFile(InputStream inputStream) {
         return "Received stream";
     }
+
+    @GetMapping("/listParam")
+    public String getListParam(@RequestParam List<String> list) {
+        return String.join(",", list);
+    }
 }
