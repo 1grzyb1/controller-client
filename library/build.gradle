@@ -26,6 +26,7 @@ import com.vanniktech.maven.publish.SonatypeHost
 
 mavenPublishing {
     publishToMavenCentral(SonatypeHost.CENTRAL_PORTAL)
+    coordinates('io.github.1grzyb1', 'controller-client', version)
 
     signAllPublications()
     pom {

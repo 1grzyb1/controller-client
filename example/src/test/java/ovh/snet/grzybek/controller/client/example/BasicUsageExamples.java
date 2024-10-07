@@ -1,12 +1,10 @@
 package ovh.snet.grzybek.controller.client.example;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
+import ovh.snet.grzybek.controller.client.core.annotation.ControllerClient;
 
 import java.util.List;
 
@@ -16,15 +14,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @AutoConfigureMockMvc
 class BasicUsageExamples {
 
-    @Autowired
-    private ControllerClientFactory controllerClientFactory;
 
+    @ControllerClient
     private ExampleController exampleController;
-
-    @BeforeEach
-    void setUp() {
-        exampleController = controllerClientFactory.create(ExampleController.class);
-    }
 
     @Test
     void basicGet() {
