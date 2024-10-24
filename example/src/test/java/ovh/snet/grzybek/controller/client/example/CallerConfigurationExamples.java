@@ -5,7 +5,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
+import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
+import ovh.snet.grzybek.controller.client.core.annotation.SetControllerClientCaller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -14,10 +16,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CallerConfigurationExamples {
 
   @Autowired private ControllerClientFactory controllerClientFactory;
+  @SetControllerClientCaller
+  private ControllerClientCaller<ExampleController> clientCaller;
 
   @Test
   void checkExpectedStatusUsingCaller() {
-    var clientCaller = controllerClientFactory.caller(ExampleController.class);
     var result =
         (ExampleResponse)
             clientCaller
@@ -30,7 +33,6 @@ class CallerConfigurationExamples {
 
   @Test
   void checkInvalidStatusWhenEnumInResponse() {
-    var clientCaller = controllerClientFactory.caller(ExampleController.class);
     var result =
             (ExampleResponse)
                     clientCaller

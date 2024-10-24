@@ -7,5 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ControllerClient {
+public @interface SetControllerClientCaller {
+
+    Class<? extends ControllerClientAnnotationCustomizer> customizer() default DefaultControllerClientAnnotationCustomizer.class;
 }

@@ -6,8 +6,7 @@ import ovh.snet.grzybek.controller.client.core.annotation.ControllerClientAnnota
 
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Component
-class ControllerClientCustomizer implements ControllerClientAnnotationCustomizer {
+public class ControllerClientCustomizer implements ControllerClientAnnotationCustomizer {
 
     @Override
     public ControllerClientBuilder<Object> customize(ControllerClientBuilder<Object> builder) {
