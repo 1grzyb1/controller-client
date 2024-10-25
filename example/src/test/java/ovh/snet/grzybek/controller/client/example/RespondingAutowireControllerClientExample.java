@@ -8,22 +8,16 @@ import org.springframework.boot.test.context.SpringBootTest;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 import ovh.snet.grzybek.controller.client.core.ControllerResponse;
 import ovh.snet.grzybek.controller.client.core.RespondingControllerClient;
+import ovh.snet.grzybek.controller.client.core.annotation.AutowireRespondingControllerClient;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class RespondingSetControllerClientExample {
+class RespondingAutowireControllerClientExample {
 
-    @Autowired
-    private ControllerClientFactory controllerClientFactory;
-
+    @AutowireRespondingControllerClient
     private RespondingControllerClient<ExampleController> exampleController;
-
-    @BeforeEach
-    void setUp() {
-        exampleController = controllerClientFactory.respondingClient(ExampleController.class);
-    }
 
     @Test
     void shouldReturnInternalServerError() {

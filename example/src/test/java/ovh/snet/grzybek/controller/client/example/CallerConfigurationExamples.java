@@ -7,7 +7,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.HttpStatus;
 import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
-import ovh.snet.grzybek.controller.client.core.annotation.SetControllerClientCaller;
+import ovh.snet.grzybek.controller.client.core.annotation.AutowireControllerClientCaller;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -16,7 +16,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CallerConfigurationExamples {
 
   @Autowired private ControllerClientFactory controllerClientFactory;
-  @SetControllerClientCaller
+  @AutowireControllerClientCaller
   private ControllerClientCaller<ExampleController> clientCaller;
 
   @Test

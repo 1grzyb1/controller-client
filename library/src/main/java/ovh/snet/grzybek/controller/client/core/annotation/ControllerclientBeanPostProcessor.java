@@ -1,17 +1,16 @@
 package ovh.snet.grzybek.controller.client.core.annotation;
 
-import jakarta.annotation.Nullable;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 import ovh.snet.grzybek.controller.client.core.ControllerClientBuilder;
 import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
+import ovh.snet.grzybek.controller.client.core.RespondingControllerClient;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.Optional;
 
 @Component
 class ControllerclientBeanPostProcessor implements BeanPostProcessor {
@@ -26,12 +25,16 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         Field[] fields = bean.getClass().getDeclaredFields();
         for (Field field : fields) {
-            if (field.isAnnotationPresent(SetControllerClient.class)) {
+            if (field.isAnnotationPresent(AutowireControllerClient.class)) {
                 setControllerClient(bean, field);
             }
 
-            if (field.isAnnotationPresent(SetControllerClientCaller.class)) {
+            if (field.isAnnotationPresent(AutowireControllerClientCaller.class)) {
                 setControllerClientCaller(bean, field);
+            }
+
+            if (field.isAnnotationPresent(AutowireRespondingControllerClient.class)) {
+                setRespondingControllerClient(bean, field);
             }
         }
         return bean;
@@ -43,7 +46,7 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
             Class<?> fieldType = field.getType();
             var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(fieldType);
 
-            var annotation = field.getAnnotation(SetControllerClient.class);
+            var annotation = field.getAnnotation(AutowireControllerClient.class);
             ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
 
             var client = getClient(builder, customizer);
@@ -56,10 +59,10 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
     private void setControllerClientCaller(Object bean, Field field) {
         try {
             field.setAccessible(true);
-            Class<?> subtypeClass = getClassType(field);
+            Class<?> subtypeClass = getClassType(field, ControllerClientCaller.class);
             var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(subtypeClass);
 
-            var annotation = field.getAnnotation(SetControllerClientCaller.class);
+            var annotation = field.getAnnotation(AutowireControllerClientCaller.class);
             ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
 
             var caller = getClientCaller(builder, customizer);
@@ -69,11 +72,27 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
         }
     }
 
-    private static Class<?> getClassType(Field field) {
+    private void setRespondingControllerClient(Object bean, Field field) {
+        try {
+            field.setAccessible(true);
+            Class<?> subtypeClass = getClassType(field, RespondingControllerClient.class);
+            var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(subtypeClass);
+
+            var annotation = field.getAnnotation(AutowireRespondingControllerClient.class);
+            ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
+
+            var caller = getRespondingClient(builder, customizer);
+            field.set(bean, caller);
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException("Failed to inject client for field: " + field.getName(), e);
+        }
+    }
+
+    private static Class<?> getClassType(Field field, Type classType) {
         Type genericFieldType = field.getGenericType();
         ParameterizedType parameterizedType = (ParameterizedType) genericFieldType;
         Type rawType = parameterizedType.getRawType();
-        assert rawType == ControllerClientCaller.class;
+        assert rawType == classType;
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
         Class<?> subtypeClass = (Class<?>) typeArguments[0];
         return subtypeClass;
@@ -94,6 +113,15 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
             return controllerClientFactory.caller(builder);
         }
     }
+
+    private Object getRespondingClient(ControllerClientBuilder<Object> builder, ControllerClientAnnotationCustomizer customizer) {
+        if (customizer != null) {
+            return controllerClientFactory.respondingClient(customizer.customize(builder));
+        } else {
+            return controllerClientFactory.respondingClient(builder);
+        }
+    }
+
 
     private ControllerClientAnnotationCustomizer instantiateCustomizer(Class<? extends ControllerClientAnnotationCustomizer> customizerClass) {
         try {

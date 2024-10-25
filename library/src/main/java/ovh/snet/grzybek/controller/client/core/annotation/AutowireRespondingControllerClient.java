@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface SetControllerClientCaller {
+public @interface AutowireRespondingControllerClient {
 
     Class<? extends ControllerClientAnnotationCustomizer> customizer() default DefaultControllerClientAnnotationCustomizer.class;
 }

@@ -4,7 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.mock.web.MockMultipartFile;
-import ovh.snet.grzybek.controller.client.core.annotation.SetControllerClient;
+import ovh.snet.grzybek.controller.client.core.annotation.AutowireControllerClient;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class BasicUsageExamples {
 
 
-    @SetControllerClient(customizer = ControllerClientCustomizer.class)
+    @AutowireControllerClient(customizer = ControllerClientCustomizer.class)
     private ExampleController exampleController;
 
     @Test
