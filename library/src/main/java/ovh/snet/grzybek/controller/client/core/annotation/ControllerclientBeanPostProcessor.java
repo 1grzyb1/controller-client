@@ -4,13 +4,17 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.stereotype.Component;
 import ovh.snet.grzybek.controller.client.core.ControllerClientBuilder;
-import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
+import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.RespondingControllerClient;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
+import java.util.Optional;
+import java.util.function.BiFunction;
 
 @Component
 class ControllerclientBeanPostProcessor implements BeanPostProcessor {
@@ -25,67 +29,42 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
     public Object postProcessBeforeInitialization(Object bean, String beanName) throws BeansException {
         Field[] fields = bean.getClass().getDeclaredFields();
         for (Field field : fields) {
-            if (field.isAnnotationPresent(AutowireControllerClient.class)) {
-                setControllerClient(bean, field);
-            }
-
-            if (field.isAnnotationPresent(AutowireControllerClientCaller.class)) {
-                setControllerClientCaller(bean, field);
-            }
-
-            if (field.isAnnotationPresent(AutowireRespondingControllerClient.class)) {
-                setRespondingControllerClient(bean, field);
+            try {
+                if (field.isAnnotationPresent(AutowireControllerClient.class)) {
+                    setField(bean, field, AutowireControllerClient.class, null,
+                            (factory, builder) -> builder.build());
+                } else if (field.isAnnotationPresent(AutowireControllerClientCaller.class)) {
+                    setField(bean, field, AutowireControllerClientCaller.class, ControllerClientCaller.class,
+                            ControllerClientFactory::caller);
+                } else if (field.isAnnotationPresent(AutowireRespondingControllerClient.class)) {
+                    setField(bean, field, AutowireRespondingControllerClient.class, RespondingControllerClient.class,
+                            ControllerClientFactory::respondingClient);
+                }
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException("Failed to inject client for field: " + field.getName(), e);
             }
         }
         return bean;
     }
 
-    private void setControllerClient(Object bean, Field field) {
-        try {
-            field.setAccessible(true);
-            Class<?> fieldType = field.getType();
-            var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(fieldType);
-
-            var annotation = field.getAnnotation(AutowireControllerClient.class);
-            ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
-
-            var client = getClient(builder, customizer);
-            field.set(bean, client);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to inject client for field: " + field.getName(), e);
-        }
+    private void setField(Object bean, Field field, Class<? extends Annotation> annotationClass, Type classType,
+                          BiFunction<ControllerClientFactory, ControllerClientBuilder<Object>, Object> clientFactoryFunction)
+            throws IllegalAccessException {
+        field.setAccessible(true);
+        var fieldType = getFieldType(field, classType);
+        final var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(fieldType);
+        var annotation = field.getAnnotation(annotationClass);
+        var customizer = instantiateCustomizer(getCustomizerClass(annotation));
+        customizer.ifPresent(c -> c.customize(builder));
+        var client = clientFactoryFunction.apply(controllerClientFactory, builder);
+        field.set(bean, client);
     }
 
-    private void setControllerClientCaller(Object bean, Field field) {
-        try {
-            field.setAccessible(true);
-            Class<?> subtypeClass = getClassType(field, ControllerClientCaller.class);
-            var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(subtypeClass);
-
-            var annotation = field.getAnnotation(AutowireControllerClientCaller.class);
-            ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
-
-            var caller = getClientCaller(builder, customizer);
-            field.set(bean, caller);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to inject client for field: " + field.getName(), e);
+    private static Class<?> getFieldType(Field field, Type classType) {
+        if (classType != null) {
+            return getClassType(field, classType);
         }
-    }
-
-    private void setRespondingControllerClient(Object bean, Field field) {
-        try {
-            field.setAccessible(true);
-            Class<?> subtypeClass = getClassType(field, RespondingControllerClient.class);
-            var builder = (ControllerClientBuilder<Object>) controllerClientFactory.builder(subtypeClass);
-
-            var annotation = field.getAnnotation(AutowireRespondingControllerClient.class);
-            ControllerClientAnnotationCustomizer customizer = instantiateCustomizer(annotation.customizer());
-
-            var caller = getRespondingClient(builder, customizer);
-            field.set(bean, caller);
-        } catch (IllegalAccessException e) {
-            throw new RuntimeException("Failed to inject client for field: " + field.getName(), e);
-        }
+        return field.getType();
     }
 
     private static Class<?> getClassType(Field field, Type classType) {
@@ -94,44 +73,28 @@ class ControllerclientBeanPostProcessor implements BeanPostProcessor {
         Type rawType = parameterizedType.getRawType();
         assert rawType == classType;
         Type[] typeArguments = parameterizedType.getActualTypeArguments();
-        Class<?> subtypeClass = (Class<?>) typeArguments[0];
-        return subtypeClass;
+        return (Class<?>) typeArguments[0];
     }
 
-    private Object getClient(ControllerClientBuilder<Object> builder, ControllerClientAnnotationCustomizer customizer) {
-        if (customizer != null) {
-            return customizer.customize(builder).build();
-        } else {
-            return builder.build();
+    private Class<? extends ControllerClientAnnotationCustomizer> getCustomizerClass(Annotation annotation) {
+        try {
+            Method method = annotation.annotationType().getMethod("customizer");
+            return (Class<? extends ControllerClientAnnotationCustomizer>) method.invoke(annotation);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to get customizer class from annotation: "
+                    + annotation.annotationType().getName(), e);
         }
     }
 
-    private Object getClientCaller(ControllerClientBuilder<Object> builder, ControllerClientAnnotationCustomizer customizer) {
-        if (customizer != null) {
-            return controllerClientFactory.caller(customizer.customize(builder));
-        } else {
-            return controllerClientFactory.caller(builder);
-        }
-    }
-
-    private Object getRespondingClient(ControllerClientBuilder<Object> builder, ControllerClientAnnotationCustomizer customizer) {
-        if (customizer != null) {
-            return controllerClientFactory.respondingClient(customizer.customize(builder));
-        } else {
-            return controllerClientFactory.respondingClient(builder);
-        }
-    }
-
-
-    private ControllerClientAnnotationCustomizer instantiateCustomizer(Class<? extends ControllerClientAnnotationCustomizer> customizerClass) {
+    private Optional<ControllerClientAnnotationCustomizer> instantiateCustomizer(
+            Class<? extends ControllerClientAnnotationCustomizer> customizerClass) {
         try {
             if (customizerClass == DefaultControllerClientAnnotationCustomizer.class) {
-                return null;
+                return Optional.empty();
             }
-            return customizerClass.getDeclaredConstructor().newInstance();
+            return Optional.of(customizerClass.getDeclaredConstructor().newInstance());
         } catch (Exception e) {
             throw new RuntimeException("Failed to instantiate customizer: " + customizerClass.getName(), e);
         }
     }
 }
-
