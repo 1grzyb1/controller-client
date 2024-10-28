@@ -1,11 +1,8 @@
 package ovh.snet.grzybek.controller.client.example;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;
 import ovh.snet.grzybek.controller.client.core.ControllerResponse;
 import ovh.snet.grzybek.controller.client.core.RespondingControllerClient;
 import ovh.snet.grzybek.controller.client.core.annotation.AutowireRespondingControllerClient;
@@ -14,7 +11,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
 @AutoConfigureMockMvc
-class RespondingAutowireControllerClientExample {
+class RespondingControllerClientExample {
 
     @AutowireRespondingControllerClient
     private RespondingControllerClient<ExampleController> exampleController;

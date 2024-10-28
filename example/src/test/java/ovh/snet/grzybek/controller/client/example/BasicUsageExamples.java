@@ -10,6 +10,36 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+/**
+ * This test class demonstrates the basic usage of the Controller Client library
+ * for testing Spring Boot REST controllers.
+ * The library allows direct calls to
+ * controller methods using proxy instances, abstracting away MockMvc setup and
+ * response deserialization, making tests concise and type-safe.
+ * <p>
+ * The Controller Client library leverages the Spring MockMvc framework under the hood,
+ * simplifying typical REST API testing by handling setup and validation in a more
+ * readable, intuitive way.
+ * <p>
+ * In this example:
+ * - The `@AutowireControllerClient` annotation is used to inject a proxy instance of
+ * the `ExampleController`, enabling direct method calls on the controller.
+ * - Each test demonstrates how to interact with different types of controller endpoints,
+ * including GET and POST requests, requests with path variables and parameters, and file uploads.
+ * - The Controller Client also supports assertions for responses and status codes, which can
+ * be customized via `ControllerClientCustomizer`.
+ * <p>
+ * Setup:
+ * - The `ControllerClientCustomizer` class is configured to automatically verify the
+ * response status is 2xx for each test.
+ * This can be customized as needed.
+ * <p>
+ * Required Annotations:
+ * - `@SpringBootTest` loads the full application context for integration testing.
+ * - `@AutoConfigureMockMvc` configures MockMvc for use within Spring Boot tests.
+ * - `@AutowireControllerClient` injects the controller client proxy with optional
+ * customizations.
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 class BasicUsageExamples {
