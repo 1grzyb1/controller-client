@@ -18,6 +18,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.cglib.proxy.Factory;
+import org.springframework.objenesis.ObjenesisStd;
+
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -57,11 +60,21 @@ class ControllerClient<T> {
         this.responseHandlers = responseHandlers;
     }
 
+    @SuppressWarnings("unchecked")
     T getClient() {
         Enhancer enhancer = new Enhancer();
         enhancer.setSuperclass(clazz);
-        enhancer.setCallback((MethodInterceptor) (obj, method, args, proxy) -> intercept(method, args));
-        return (T) enhancer.create(getParameterTypes(), getConstructorParams());
+        enhancer.setCallbackType(MethodInterceptor.class);
+
+        Class<?> proxyClass = enhancer.createClass();
+
+        var objenesis = new ObjenesisStd();
+        Object instance = objenesis.newInstance(proxyClass);
+
+        MethodInterceptor interceptor = (obj, method, args, proxy) -> intercept(method, args);
+        ((Factory) instance).setCallback(0, interceptor);
+
+        return (T) instance;
     }
 
     private Object intercept(Method method, Object[] args) throws Exception {
