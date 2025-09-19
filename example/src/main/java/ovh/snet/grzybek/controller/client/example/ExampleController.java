@@ -25,7 +25,7 @@ class ExampleController {
     }
 
     @GetMapping("/param")
-    public ExampleResponse paramExample(@RequestParam String message) {
+    public ExampleResponse paramExample(@RequestParam(required = false) String message) {
         return new ExampleResponse("Received: " + message);
     }
 

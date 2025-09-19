@@ -9,6 +9,7 @@ import ovh.snet.grzybek.controller.client.core.annotation.AutowireControllerClie
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * This test class demonstrates the basic usage of the Controller Client library
@@ -68,10 +69,25 @@ class BasicUsageExamples {
     }
 
     @Test
+    void getWithNullParam() {
+        var response = exampleController.paramExample(null);
+        assertThat(response.message()).isEqualTo("Received: null");
+    }
+
+    @Test
     void getWithPath() {
         var response = exampleController.pathExample("Test path");
         assertThat(response.message()).isEqualTo("Received: Test path");
     }
+
+    @Test
+    void getWithNullPath() {
+        assertThatThrownBy(() -> exampleController.pathExample(null))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("Path variable")
+                .hasMessageContaining("pathExample");
+    }
+
 
     @Test
     void getList() {

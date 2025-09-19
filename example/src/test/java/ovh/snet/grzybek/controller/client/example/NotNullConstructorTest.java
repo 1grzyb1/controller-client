@@ -3,10 +3,7 @@ package ovh.snet.grzybek.controller.client.example;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.mock.web.MockMultipartFile;
 import ovh.snet.grzybek.controller.client.core.annotation.AutowireControllerClient;
-
-import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

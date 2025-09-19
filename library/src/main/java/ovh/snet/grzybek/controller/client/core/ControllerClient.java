@@ -3,12 +3,14 @@ package ovh.snet.grzybek.controller.client.core;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cglib.proxy.Enhancer;
+import org.springframework.cglib.proxy.Factory;
 import org.springframework.cglib.proxy.MethodInterceptor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.io.InputStreamSource;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.objenesis.ObjenesisStd;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -18,9 +20,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.cglib.proxy.Factory;
-import org.springframework.objenesis.ObjenesisStd;
-
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -33,7 +32,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 class ControllerClient<T> {
@@ -189,14 +187,31 @@ class ControllerClient<T> {
                 });
     }
 
+    // 3) Null-safe request params
     private static void setRequestParams(
             Method method, Object[] args, MockHttpServletRequestBuilder requestBuilder) {
+
         var queryParams = getRequestParams(method, args);
+
         queryParams.forEach((key, value) -> {
+            if (value == null) {
+                return;
+            }
+
             if (value instanceof MockMultipartFile multipartFile) {
                 ((MockMultipartHttpServletRequestBuilder) requestBuilder).file(multipartFile);
             } else if (value instanceof Collection<?> collection) {
-                var values = collection.stream().map(Object::toString).toArray(String[]::new);
+                String[] values = collection.stream()
+                        .map(v -> v == null ? "" : v.toString())
+                        .toArray(String[]::new);
+                requestBuilder.param(key, values);
+            } else if (value.getClass().isArray()) {
+                int len = java.lang.reflect.Array.getLength(value);
+                String[] values = new String[len];
+                for (int i = 0; i < len; i++) {
+                    Object elt = java.lang.reflect.Array.get(value, i);
+                    values[i] = elt == null ? "" : elt.toString();
+                }
                 requestBuilder.param(key, values);
             } else {
                 requestBuilder.param(key, value.toString());
@@ -204,38 +219,33 @@ class ControllerClient<T> {
         });
     }
 
+
     private static Map<String, Object> getRequestParams(Method method, Object[] args) {
         var parameters = method.getParameters();
-        return Arrays.stream(parameters)
-                .filter(param -> param.getAnnotation(RequestParam.class) != null)
-                .collect(
-                        Collectors.toMap(
-                                ControllerClient::getQueryParamKey,
-                                param -> getQueryParamArg(args, param, parameters),
-                                (existing, replacement) -> existing,
-                                HashMap::new));
+        var result = new HashMap<String, Object>();
+
+        for (int i = 0; i < parameters.length; i++) {
+            var p = parameters[i];
+            var rp = p.getAnnotation(RequestParam.class);
+            if (rp == null) continue;
+
+            Object value = args[i];
+            if (value == null) continue;
+
+            String key = getQueryParamKey(p);
+            result.putIfAbsent(key, value);
+        }
+        return result;
     }
 
     private static String setPathVariables(Method method, Object[] args, String endpoint) {
         var pathVariables = getPathVariable(method, args);
         for (var entry : pathVariables.entrySet()) {
-            endpoint = endpoint.replace("{" + entry.getKey() + "}", entry.getValue().toString());
+            String replacement = entry.getValue() == null ? "" : entry.getValue().toString();
+            endpoint = endpoint.replace("{" + entry.getKey() + "}", replacement);
         }
+        endpoint = endpoint.replaceAll("(?<!:)//+", "/");
         return endpoint;
-    }
-
-    private Object[] getConstructorParams() {
-        var parameterTypes = getParameterTypes();
-        var parameterValues = new Object[parameterTypes.length];
-        Arrays.fill(parameterValues, null);
-        return parameterValues;
-    }
-
-    private Class<?>[] getParameterTypes() {
-        var constructors = clazz.getDeclaredConstructors();
-        var constructor = constructors[0];
-
-        return constructor.getParameterTypes();
     }
 
     private static Optional<Object> getRequestBodyArg(Method method, Object[] args) {
@@ -261,15 +271,28 @@ class ControllerClient<T> {
 
     private static Map<String, Object> getPathVariable(Method method, Object[] args) {
         var parameters = method.getParameters();
-        return Arrays.stream(parameters)
-                .filter(param -> param.getAnnotation(PathVariable.class) != null)
-                .collect(
-                        Collectors.toMap(
-                                ControllerClient::getPathVariableKey,
-                                param -> getPathVariableArg(args, param, parameters),
-                                (existing, replacement) -> existing,
-                                HashMap::new));
+        var result = new LinkedHashMap<String, Object>();
+
+        for (int i = 0; i < parameters.length; i++) {
+            var p = parameters[i];
+            var pv = p.getAnnotation(PathVariable.class);
+            if (pv == null) continue;
+
+            String name = getPathVariableKey(p);
+            Object value = args[i];
+
+            if (value == null) {
+                throw new IllegalArgumentException(
+                        "Path variable '" + name + "' cannot be null for " +
+                                method.getDeclaringClass().getName() + "#" + method.getName() + "(...)"
+                );
+            }
+
+            result.put(name, value);
+        }
+        return result;
     }
+
 
     private static Object getPathVariableArg(Object[] args, Parameter param, Parameter[] parameters) {
         return args[Arrays.asList(parameters).indexOf(param)];
