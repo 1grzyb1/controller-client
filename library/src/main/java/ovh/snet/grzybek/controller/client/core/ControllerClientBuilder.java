@@ -1,10 +1,11 @@
 package ovh.snet.grzybek.controller.client.core;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.AbstractMockHttpServletRequestBuilder;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,7 +49,7 @@ public class ControllerClientBuilder<T> {
   private final Class<T> clazz;
   private final ObjectMapper objectMapper;
   private final MockMvc mockMvc;
-  private final List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers = new ArrayList<>();
+    private final List<Consumer<AbstractMockHttpServletRequestBuilder<?>>> requestCustomizers = new ArrayList<>();
   private final List<Function<ResultActions, ResultActions>> responseCustomizers =
       new ArrayList<>();
   private final List<Consumer<MockHttpServletResponse>> responseHandlers = new ArrayList<>();
@@ -66,7 +67,7 @@ public class ControllerClientBuilder<T> {
    * @param consumer a {@link Consumer} that customizes the {@link MockHttpServletRequestBuilder}
    * @return the current instance of {@code ControllerClientBuilder} for fluent chaining
    */
-  public ControllerClientBuilder<T> customizeRequest(Consumer<MockHttpServletRequestBuilder> consumer) {
+  public ControllerClientBuilder<T> customizeRequest(Consumer<AbstractMockHttpServletRequestBuilder<?>> consumer) {
     requestCustomizers.add(consumer);
     return this;
   }

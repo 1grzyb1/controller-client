@@ -1,7 +1,5 @@
 package ovh.snet.grzybek.controller.client.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.Factory;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -13,13 +11,12 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.objenesis.ObjenesisStd;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
-import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMultipartHttpServletRequestBuilder;
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
+import org.springframework.test.web.servlet.request.*;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -39,7 +36,7 @@ class ControllerClient<T> {
     private final Class<?> clazz;
     private final MockMvc mockMvc;
     private final ObjectMapper objectMapper;
-    private final List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers;
+    private final List<Consumer<AbstractMockHttpServletRequestBuilder<?>>> requestCustomizers;
     private final List<Function<ResultActions, ResultActions>> resultCustomizers;
     private final List<Consumer<MockHttpServletResponse>> responseHandlers;
 
@@ -47,7 +44,7 @@ class ControllerClient<T> {
             Class<?> clazz,
             MockMvc mockMvc,
             ObjectMapper objectMapper,
-            List<Consumer<MockHttpServletRequestBuilder>> requestCustomizers,
+            List<Consumer<AbstractMockHttpServletRequestBuilder<?>>> requestCustomizers,
             List<Function<ResultActions, ResultActions>> resultCustomizers,
             List<Consumer<MockHttpServletResponse>> responseHandlers) {
         this.clazz = clazz;
@@ -75,10 +72,108 @@ class ControllerClient<T> {
         return (T) instance;
     }
 
-    private Object intercept(Method method, Object[] args) throws Exception {
-        var requestBuilder = prepareRequest(method, args);
+    /**
+     * Build either a regular or multipart request builder, using Spring 6.2+ types.
+     */
+    private static AbstractMockHttpServletRequestBuilder<?> getRequestBuilder(
+            Method method, RequestMapping requestMapping, String endpoint) {
 
+        if (isMultipart(method)) {
+            MockMultipartHttpServletRequestBuilder multipartBuilder =
+                    MockMvcRequestBuilders.multipart(endpoint);
+
+            // multipart() defaults to POST; override if needed
+            multipartBuilder.with(request -> {
+                request.setMethod(requestMapping.method()[0].name());
+                return request;
+            });
+
+            return multipartBuilder;
+        }
+
+        MockHttpServletRequestBuilder builder =
+                MockMvcRequestBuilders.request(requestMapping.method()[0].asHttpMethod(), endpoint);
+
+        return builder;
+    }
+
+    /**
+     * Null-safe request params + multipart support.
+     */
+    private static void setRequestParams(
+            Method method,
+            Object[] args,
+            AbstractMockHttpServletRequestBuilder<?> requestBuilder) {
+
+        var queryParams = getRequestParams(method, args);
+
+        queryParams.forEach((key, value) -> {
+            if (value == null) {
+                return;
+            }
+
+            // Multipart file param
+            if (value instanceof MockMultipartFile multipartFile) {
+                if (requestBuilder instanceof AbstractMockMultipartHttpServletRequestBuilder<?> multipartBuilder) {
+                    multipartBuilder.file(multipartFile);
+                } else {
+                    throw new IllegalStateException(
+                            "MockMultipartFile provided for parameter '" + key +
+                                    "' but request is not multipart");
+                }
+                return;
+            }
+
+            // Collections -> multiple values
+            if (value instanceof Collection<?> collection) {
+                String[] values = collection.stream()
+                        .map(v -> v == null ? "" : v.toString())
+                        .toArray(String[]::new);
+                requestBuilder.param(key, values);
+                return;
+            }
+
+            // Arrays -> multiple values
+            if (value.getClass().isArray()) {
+                int len = java.lang.reflect.Array.getLength(value);
+                String[] values = new String[len];
+                for (int i = 0; i < len; i++) {
+                    Object elt = java.lang.reflect.Array.get(value, i);
+                    values[i] = elt == null ? "" : elt.toString();
+                }
+                requestBuilder.param(key, values);
+                return;
+            }
+
+            // Simple value
+            requestBuilder.param(key, value.toString());
+        });
+    }
+
+    private static Class<?> getaClass(Type type) {
+        if (type instanceof Class) {
+            return (Class<?>) type;
+        }
+        throw new UnsupportedOperationException("Unsupported type argument: " + type.getTypeName());
+    }
+
+    private static String setPathVariables(Method method, Object[] args, String endpoint) {
+        var pathVariables = getPathVariable(method, args);
+        for (var entry : pathVariables.entrySet()) {
+            String replacement = entry.getValue() == null ? "" : entry.getValue().toString();
+            endpoint = endpoint.replace("{" + entry.getKey() + "}", replacement);
+        }
+        // Collapse duplicate slashes except after scheme (://)
+        endpoint = endpoint.replaceAll("(?<!:)//+", "/");
+        return endpoint;
+    }
+
+    private Object intercept(Method method, Object[] args) throws Exception {
+        AbstractMockHttpServletRequestBuilder<?> requestBuilder = prepareRequest(method, args);
+
+        // Apply customizers
         requestCustomizers.forEach(customizer -> customizer.accept(requestBuilder));
+
         var perform = mockMvc.perform(requestBuilder);
         resultCustomizers.forEach(customizer -> customizer.apply(perform));
 
@@ -108,7 +203,7 @@ class ControllerClient<T> {
 
     private Object mapParameterizedType(
             ParameterizedType returnType, MockHttpServletResponse response)
-            throws JsonProcessingException, UnsupportedEncodingException {
+            throws UnsupportedEncodingException {
         var rawType = (Class<?>) returnType.getRawType();
 
         var actualTypeArguments = returnType.getActualTypeArguments();
@@ -124,101 +219,51 @@ class ControllerClient<T> {
         return objectMapper.readValue(response.getContentAsString(), javaType);
     }
 
-    private static Class<?> getaClass(Type type) {
-        if (type instanceof Class) {
-            return (Class<?>) type;
-        }
-        throw new UnsupportedOperationException("Unsupported type argument: " + type.getTypeName());
-    }
-
-    private MockHttpServletRequestBuilder prepareRequest(Method method, Object[] args) throws IOException {
-        var classAnnotations = clazz.getAnnotations();
-        var requestMapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
-        var requestPath = requestMapping.path();
-        var endpoint =
-                getBaseUrl(classAnnotations) + (requestPath.length > 0 ? requestMapping.path()[0] : "");
-        endpoint = setPathVariables(method, args, endpoint);
-        var requestBuilder = getRequestBuilder(method, requestMapping, endpoint);
-        setRequestParams(method, args, requestBuilder);
-        setRequestBody(method, args, requestBuilder);
-        setInputStream(requestBuilder, args);
-        return requestBuilder;
-    }
-
-    private void setInputStream(MockHttpServletRequestBuilder requestBuilder, Object[] args) throws IOException {
-        for (var arg : args) {
-            if (arg instanceof InputStream) {
-                requestBuilder.content(((InputStream) arg).readAllBytes())
-                        .contentType(MediaType.TEXT_PLAIN);
-            }
-        }
-    }
-
-    private static MockHttpServletRequestBuilder getRequestBuilder(Method method, RequestMapping requestMapping, String endpoint) {
-        if (isMultipart(method)) {
-            MockHttpServletRequestBuilder multipartBuilder = MockMvcRequestBuilders.multipart(endpoint);
-            multipartBuilder.with(request -> {
-                request.setMethod(requestMapping.method()[0].name());
-                return request;
-            });
-            return multipartBuilder;
-        }
-        return MockMvcRequestBuilders.request(requestMapping.method()[0].asHttpMethod(), endpoint);
-    }
-
     private static boolean isMultipart(Method method) {
         return Arrays.stream(method.getParameterTypes())
                 .anyMatch(InputStreamSource.class::isAssignableFrom);
     }
 
-    private void setRequestBody(
-            Method method, Object[] args, MockHttpServletRequestBuilder requestBuilder) {
-        var requestBody = getRequestBodyArg(method, args);
-        requestBody.ifPresent(
-                body -> {
-                    try {
-                        requestBuilder
-                                .content(objectMapper.writeValueAsString(body))
-                                .contentType(MediaType.APPLICATION_JSON);
+    private AbstractMockHttpServletRequestBuilder<?> prepareRequest(Method method, Object[] args)
+            throws IOException {
 
-                    } catch (IOException e) {
-                        throw new RuntimeException(e);
-                    }
-                });
+        var classAnnotations = clazz.getAnnotations();
+        var requestMapping = AnnotatedElementUtils.findMergedAnnotation(method, RequestMapping.class);
+
+        if (requestMapping == null) {
+            throw new IllegalStateException(
+                    "No @RequestMapping found on method " +
+                            method.getDeclaringClass().getName() + "#" + method.getName());
+        }
+
+        var requestPath = requestMapping.path();
+        var endpoint =
+                getBaseUrl(classAnnotations) + (requestPath.length > 0 ? requestMapping.path()[0] : "");
+
+        endpoint = setPathVariables(method, args, endpoint);
+
+        AbstractMockHttpServletRequestBuilder<?> requestBuilder =
+                getRequestBuilder(method, requestMapping, endpoint);
+
+        setRequestParams(method, args, requestBuilder);
+        setRequestBody(method, args, requestBuilder);
+        setInputStream(requestBuilder, args);
+
+        return requestBuilder;
     }
 
-    // 3) Null-safe request params
-    private static void setRequestParams(
-            Method method, Object[] args, MockHttpServletRequestBuilder requestBuilder) {
+    private void setInputStream(
+            AbstractMockHttpServletRequestBuilder<?> requestBuilder,
+            Object[] args) throws IOException {
 
-        var queryParams = getRequestParams(method, args);
-
-        queryParams.forEach((key, value) -> {
-            if (value == null) {
-                return;
+        for (var arg : args) {
+            if (arg instanceof InputStream inputStream) {
+                requestBuilder
+                        .content(new String(inputStream.readAllBytes()))
+                        .contentType(MediaType.TEXT_PLAIN);
             }
-
-            if (value instanceof MockMultipartFile multipartFile) {
-                ((MockMultipartHttpServletRequestBuilder) requestBuilder).file(multipartFile);
-            } else if (value instanceof Collection<?> collection) {
-                String[] values = collection.stream()
-                        .map(v -> v == null ? "" : v.toString())
-                        .toArray(String[]::new);
-                requestBuilder.param(key, values);
-            } else if (value.getClass().isArray()) {
-                int len = java.lang.reflect.Array.getLength(value);
-                String[] values = new String[len];
-                for (int i = 0; i < len; i++) {
-                    Object elt = java.lang.reflect.Array.get(value, i);
-                    values[i] = elt == null ? "" : elt.toString();
-                }
-                requestBuilder.param(key, values);
-            } else {
-                requestBuilder.param(key, value.toString());
-            }
-        });
+        }
     }
-
 
     private static Map<String, Object> getRequestParams(Method method, Object[] args) {
         var parameters = method.getParameters();
@@ -238,14 +283,18 @@ class ControllerClient<T> {
         return result;
     }
 
-    private static String setPathVariables(Method method, Object[] args, String endpoint) {
-        var pathVariables = getPathVariable(method, args);
-        for (var entry : pathVariables.entrySet()) {
-            String replacement = entry.getValue() == null ? "" : entry.getValue().toString();
-            endpoint = endpoint.replace("{" + entry.getKey() + "}", replacement);
-        }
-        endpoint = endpoint.replaceAll("(?<!:)//+", "/");
-        return endpoint;
+    private void setRequestBody(
+            Method method,
+            Object[] args,
+            AbstractMockHttpServletRequestBuilder<?> requestBuilder) {
+
+        var requestBody = getRequestBodyArg(method, args);
+        requestBody.ifPresent(
+                body -> {
+                    requestBuilder
+                            .content(objectMapper.writeValueAsString(body))
+                            .contentType(MediaType.APPLICATION_JSON);
+                });
     }
 
     private static Optional<Object> getRequestBodyArg(Method method, Object[] args) {
@@ -292,7 +341,6 @@ class ControllerClient<T> {
         }
         return result;
     }
-
 
     private static Object getPathVariableArg(Object[] args, Parameter param, Parameter[] parameters) {
         return args[Arrays.asList(parameters).indexOf(param)];

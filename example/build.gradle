@@ -14,13 +14,12 @@ compileJava {
 }
 
 dependencies {
-
-    implementation("org.springframework.boot:spring-boot-starter-web:3.2.3")
+    implementation("org.springframework.boot:spring-boot-starter-web:4.0.0")
 
     testImplementation project(":library")
-    testImplementation platform('org.junit:junit-bom:5.9.1')
-    testImplementation 'org.junit.jupiter:junit-jupiter'
-    testImplementation("org.springframework.boot:spring-boot-starter-test:3.2.3")
+    testImplementation("org.springframework.boot:spring-boot-starter-test:4.0.0")
+    testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test:4.0.0")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.12.2")
 }
 
 test {

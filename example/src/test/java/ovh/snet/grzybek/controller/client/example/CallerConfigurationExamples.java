@@ -2,8 +2,8 @@ package ovh.snet.grzybek.controller.client.example;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.HttpStatus;
 import ovh.snet.grzybek.controller.client.core.ControllerClientCaller;
 import ovh.snet.grzybek.controller.client.core.ControllerClientFactory;

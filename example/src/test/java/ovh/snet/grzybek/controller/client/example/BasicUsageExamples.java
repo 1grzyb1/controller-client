@@ -1,9 +1,10 @@
 package ovh.snet.grzybek.controller.client.example;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.MockMvc;
 import ovh.snet.grzybek.controller.client.core.annotation.AutowireControllerClient;
 
 import java.util.List;
@@ -44,8 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @SpringBootTest
 @AutoConfigureMockMvc
 class BasicUsageExamples {
-
-
+    MockMvc mockMvc;
     @AutowireControllerClient(customizer = ControllerClientCustomizer.class)
     private ExampleController exampleController;
 
