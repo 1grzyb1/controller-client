@@ -4,10 +4,19 @@ plugins {
 }
 
 group = 'io.github.1grzyb1'
-version = '1.0.11'
+version = '2.0.0'
 
 repositories {
     mavenCentral()
+}
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+
+    withSourcesJar()
+    withJavadocJar()
 }
 
 dependencies {
