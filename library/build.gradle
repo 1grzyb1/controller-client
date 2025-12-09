@@ -4,7 +4,7 @@ plugins {
 }
 
 group = 'io.github.1grzyb1'
-version = '2.0.0'
+version = '2.1.0'
 
 repositories {
     mavenCentral()
@@ -14,15 +14,13 @@ java {
     toolchain {
         languageVersion = JavaLanguageVersion.of(17)
     }
-
-    withSourcesJar()
-    withJavadocJar()
 }
 
 dependencies {
     implementation "org.springframework.boot:spring-boot-starter-web:4.0.0"
     implementation "org.springframework:spring-test:7.0.1"
     implementation "org.hamcrest:hamcrest:3.0"
+    implementation "org.springframework.boot:spring-boot-jackson2:4.0.0"
 }
 
 test {
