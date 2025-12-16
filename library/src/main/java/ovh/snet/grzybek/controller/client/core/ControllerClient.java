@@ -1,7 +1,5 @@
 package ovh.snet.grzybek.controller.client.core;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.cglib.proxy.Enhancer;
 import org.springframework.cglib.proxy.Factory;
 import org.springframework.cglib.proxy.MethodInterceptor;
@@ -18,6 +16,8 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -204,7 +204,7 @@ class ControllerClient<T> {
 
     private Object mapParameterizedType(
             ParameterizedType returnType, MockHttpServletResponse response)
-            throws JsonProcessingException, UnsupportedEncodingException {
+            throws JacksonException, UnsupportedEncodingException {
         var rawType = (Class<?>) returnType.getRawType();
 
         var actualTypeArguments = returnType.getActualTypeArguments();
@@ -296,7 +296,7 @@ class ControllerClient<T> {
                         requestBuilder
                                 .content(objectMapper.writeValueAsString(body))
                                 .contentType(MediaType.APPLICATION_JSON);
-                    } catch (JsonProcessingException e) {
+                    } catch (JacksonException e) {
                         throw new RuntimeException(e);
                     }
                 });
